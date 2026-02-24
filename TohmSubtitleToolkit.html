@@ -1,0 +1,312 @@
+<!--
+  TohmSubtitleToolkit v1.0
+  Author: Tohm / Arthur Bourquin
+
+  COPYRIGHT NOTICE
+  ----------------
+  This tool is provided for personal and educational use.
+  Do not redistribute or sell this work without permission from the author.
+  Attribution is required if reused.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            color: #ddd;
+            background-color: #222;
+        }
+
+
+        #textareas {
+            display: flex;
+            flex-direction: row;
+        }
+        textarea {
+            color: #ddd;
+            background-color: #222;
+            border: 1px solid #444;
+            font-size: 14px;
+            width: 98%;
+            height: 300px;
+        }
+        #extensionInput,
+        #fileNameInput {
+            color: #ddd;
+            background-color: #222;
+            border: 1px solid #444;
+        }
+
+        #controls {
+            display: flex;
+            flex-direction: row;
+            gap: 5px;
+        }
+        .buttonRack {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        button {
+            font-weight: bold;
+            color: #222;
+            background-color: #ddd;
+            padding: 3px 10px;
+            border: 0px;
+            border-radius: 5px;
+        }
+
+        #canvasContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 90vw;
+            border: 1px solid #444;
+            padding: 10px;}
+        canvas {width: 800px;}
+
+    </style>
+</head>
+
+<body>
+    <div id="controls">
+        <div class="buttonRack">
+            <button onclick="layout()">change layout</button>
+        </div>
+        <div class="buttonRack">
+            <input id="fileInput" type="file">
+        </div>
+        <div class="buttonRack">
+            <button onclick="subtitle_str_to_json_str_auto()">to json format (object)</button>
+            <button onclick="subtitle_str_to_after_effects_jsx_str_auto()">to jsx format (aep script)</button>
+            <input id="fileNameInput" type="text">
+            <input id="extensionInput" type="text">
+            <button onclick="download_result()">download result file</button>
+        </div>
+        <div class="buttonRack">
+            <button onclick="generate_rasterized_subtitles_auto()">create rasterized subtitles</button>
+            <button onclick="download_pngs()">download raster subtitles</button>
+            <button onclick="clearCanvases()">clear rasterized subtitles</button>
+        </div>
+    </div>
+    <div id="textareas">
+        <textarea id="input"></textarea>
+        <textarea id="output"></textarea>
+    </div>
+    
+    <div id="canvasContainer">
+        <input id="canvasSizes" type="range" min="0.1" value="1", max="2" step="0.1" style="width: 100%;">
+    </div>
+    <script>
+        const textareaContainer = document.getElementById('textareas');
+        const inputElm = document.getElementById("input");
+        const outputElm = document.getElementById("output");
+        const canvasContainer = document.getElementById('canvasContainer');
+        const canvasSizesInput = document.getElementById("canvasSizes");
+        canvasSizesInput.addEventListener("input", () => {
+            const size = Number(canvasSizesInput.value);
+            document.querySelectorAll('canvas').forEach(canvas => {
+                canvas.style.width = size*100 + '%';
+            });
+        });
+        const fileNameInput = document.getElementById("fileNameInput");
+        fileNameInput.value = "super-sous-titres";
+        const extensionInput = document.getElementById("extensionInput");
+        extensionInput.value = ".txt";
+        const fileInput = document.getElementById("fileInput")
+
+        // file loading
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    inputElm.value = e.target.result;
+                };
+                reader.readAsText(file, "UTF-8");
+            }
+        });
+
+        // UI
+
+        function layout() {
+            const curDir = window.getComputedStyle(textareaContainer).flexDirection;
+            const isRow = curDir === "row";
+            if(isRow) {
+                textareaContainer.style.flexDirection = "column";
+                inputElm.style.width = '98%';
+                outputElm.style.width = '98%';
+            } else {
+                textareaContainer.style.flexDirection = "row";
+                inputElm.style.width = '48%';
+                outputElm.style.width = '48%';
+            }
+        }
+
+        function clearCanvases() {
+            canvasContainer.innerHTML = "";
+        }
+
+        // sous titres
+
+        function subtitle_str_to_json_str(str) {
+            str = str.replace( /^(\d+)$\n/gm , "{");
+            str = str.replace(
+                /(\d\d):(\d\d):(\d\d),(\d\d\d).....(\d\d):(\d\d):(\d\d),(\d\d\d)/g, 
+                (match, fh, fm, fs, fms, th, tm, ts, tms) => {
+                    [fh, fm, fs, fms, th, tm, ts, tms] = 
+                        [fh, fm, fs, fms, th, tm, ts, tms].map(v => Number(v));
+                const ftime = fh*3600 + fm*60 + fs + fms/1000;
+                const ttime = th*3600 + tm*60 + ts + tms/1000;
+                return "from: " + ftime.toString() + ", to: " + ttime.toString() + ", ";
+            });
+            str = str.replace( /\n\n/gm , '\n');
+            str = str.replace( /^([^{].+)$/gm , '"$1"');
+            str = str.replace( /\"\n\"/g , '", "' );
+            str = str.replace( /\n^\"(.+)"$/gm , 'text: ["$1"]},' );
+            while(str.endsWith('\n')) str = str.slice(0,-1) // virer tous les retours à la fin du fichier
+            str = str.slice(0,-1); // virer la vrigule à la fin
+            return str;
+        }
+        function subtitle_str_to_json_str_auto() {
+            const inputStr = inputElm.value;
+            const outputStr = subtitle_str_to_json_str(inputStr);
+            outputElm.value = outputStr;
+            extensionInput.value = ".json";
+        }
+
+        function subtitle_str_to_after_effects_jsx_str(str) {
+            const jsonString = subtitle_str_to_json_str(str);
+            const jsxString = 'var DATA = [' + jsonString + "];\n" +
+                'var comp = app.project.activeItem; \n' +
+                'for(var i = 0; i < DATA.length; i++) { \n' +
+                '    var text = DATA[i].text[0]; \n' +
+                '    if(DATA[i].text[1]) \n' +
+                '        text += "\\n" + DATA[i].text[1] \n' +
+                '    var layer = comp.layers.addText(i); \n' +
+                '    layer.property("Source Text").setValue(text); \n' +
+                '    layer.inPoint = DATA[i].from; \n' +
+                '    layer.outPoint = DATA[i].to; \n' +
+                '}';
+            return jsxString;
+        }
+        function subtitle_str_to_after_effects_jsx_str_auto() {
+            const inputStr = inputElm.value;
+            const outputStr = subtitle_str_to_after_effects_jsx_str(inputStr);
+            outputElm.value = outputStr;
+            extensionInput.value = ".jsx";
+        }
+
+        function subtitle_str_to_texts_str_array(str) {
+            str = str.replace( /^\d+$\n^.+$/gm , '' ); // virer id et times
+            str = str.replace( /^([^\n]+)$/gm , '"$1"' ); // guillemets autour des textes
+            str = str.replace( /"\n"/gm , '", "' ); // mettre les double lignes en une seule ligne
+            str = str.replace( /^\n/gm , '' ); // virer toutes les lignes vides
+            while(str.endsWith('\n')) str = str.slice(0,-1) // virer tous les retours à la fin du fichier
+            str = str.replace( /^(.+)$/gm , '[$1],'); // encadrer pour array
+            str = "[" + str + "]"; // encadrer dans un gros array
+            str = str.replace( /,\]/gm , "]" ); // virer la dernière virgule
+            return str;
+        }
+        function subtitle_str_to_texts_str_array_auto() {
+            const inputStr = inputElm.value;
+            const outputStr = subtitle_str_to_texts_str_array(inputStr);
+            outputElm.value = outputStr;
+            extensionInput.value = ".txt";
+        }
+
+        function generate_rasterized_subtitles(subtitleSpecs, container) {
+            const { subtitlesArray , width , height ,
+                    font , fontStyle , fontSize , lineHeight , 
+                    fontFillColor , fontStrokeColor , strokeWidth, 
+                    extrusion, extrusionAngle
+            } = subtitleSpecs;
+            const Y = height*0.9 - fontSize - lineHeight;
+            let i = 1;
+            for(const card of subtitlesArray) {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                canvas.id = i;
+                container.appendChild(canvas);
+                ctx.fillStyle = fontFillColor;
+                ctx.strokeStyle = fontStrokeColor;
+                ctx.lineWidth = 10;
+                ctx.lineJoin = "round";
+                ctx.font = fontStyle + " " + fontSize + "px " + font;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                let y = Y;
+                for(const line of card) {
+                    if(extrusion>0) {
+                        ctx.strokeStyle = fontStrokeColor;
+                        for(let i = 0; i < extrusion; i++) {
+                            const rad = -extrusionAngle * Math.PI / 180;
+                            const dx = Math.cos(rad) * i;
+                            const dy = Math.sin(rad) * i;
+                            ctx.strokeText(line, width/2 + dx, y + dy);
+                        }
+                    }
+                    ctx.strokeStyle = fontStrokeColor;
+                    ctx.strokeText(line, width/2, y);
+                    ctx.fillText(line, width/2, y);
+                    y+=lineHeight;
+                }
+            }
+        }
+        function generate_rasterized_subtitles_auto() {
+            const inputString = inputElm.value;
+            const jsonStyleString = subtitle_str_to_texts_str_array(inputString);
+            const jsonObj = JSON.parse(jsonStyleString);
+            const specs = {
+                subtitlesArray: jsonObj,
+                width: 1920, height: 1080,
+                font: 'verdana', fontStyle: '', fontSize: 24, lineHeight: 30,
+                fontFillColor: 'white', fontStrokeColor: 'black', strokeWidth: 10, 
+                extrusion: 5, extrusionAngle: -45
+            }
+            generate_rasterized_subtitles(specs,canvasContainer);
+        }
+
+        // download
+
+        function downloadTextFromElement(elementId, filename, extension) {
+            const text = document.getElementById(elementId).value;
+            const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = filename + extension;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+        }
+
+        function download_result() {
+            const elementId = "output";
+            const filename = fileNameInput.value;
+            const extension = extensionInput.value;
+            downloadTextFromElement(elementId, filename, extension);
+        }
+
+        function download_pngs() {
+            const filename = fileNameInput.value;
+            const canvases = document.querySelectorAll('canvas');
+            canvases.forEach( (canvas,i) => {
+                const curFilename = filename + "_" + String(i).padStart(5,'0');
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL("image/png");
+                link.download = curFilename;
+                link.click();
+            })
+        }
+
+    </script>
+</body>
+
+</html>
