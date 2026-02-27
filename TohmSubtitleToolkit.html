@@ -1,72 +1,117 @@
-<!--
-  TohmSubtitleToolkit v1.0
-  Author: Tohm / Arthur Bourquin
-
-  COPYRIGHT NOTICE
-  ----------------
-  This tool is provided for personal and educational use.
-  Do not redistribute or sell this work without permission from the author.
-  Attribution is required if reused.
+<!-- 
+    TohmSubtitleToolkit v1.1
+    © 2026 Tohm / Arthur Bourquin
+    Licensed under GPLv3 or CC BY-NC for assets.
 -->
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+
         body {
+            font-family: Roboto Slab, Arial;
             color: #ddd;
             background-color: #222;
         }
 
-
-        #textareas {
+        
+        .boxContourCol {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            gap: 10px;
+            font-family: Roboto Mono, 'Courier New', Courier, monospace;
+            border: 1px solid #444;
+            padding: 5px;
+        }
+        .grid2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            border: 1px solid #444;
+        }
+        .flexCol {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+        .flexRow {
             display: flex;
             flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+
+        #inOut_Div {
+            display: flex;
         }
         textarea {
             color: #ddd;
             background-color: #222;
             border: 1px solid #444;
             font-size: 14px;
-            width: 98%;
-            height: 300px;
         }
-        #extensionInput,
-        #fileNameInput {
-            color: #ddd;
-            background-color: #222;
-            border: 1px solid #444;
-        }
+
+
+
 
         #controls {
             display: flex;
             flex-direction: row;
-            gap: 5px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .buttonRack {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 5px;
         }
         button {
-            font-weight: bold;
             color: #222;
             background-color: #ddd;
+            font-family: Roboto Slab, 'Courier New', Courier, monospace;
             padding: 3px 10px;
             border: 0px;
             border-radius: 5px;
         }
+        .txtType { background-color: steelblue; }
+        .pxlType { background-color: seagreen; }
+        .dlType  { font-weight: 900; }
 
-        #canvasContainer {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: 90vw;
+        input {
+            color: #ddd;
+            background-color: #222;
             border: 1px solid #444;
-            padding: 10px;}
-        canvas {width: 800px;}
+        }
+        input[type=number] {
+            width: 70px;
+            text-align: center;
+        }
+
+        .note {
+            font-size: 12px;
+            opacity: 0.3;
+        }
+        label {
+            font-size: 12px;
+            min-width: 100px;
+        }
+
+        canvas {
+            width: 100%;
+        }
+
 
     </style>
 </head>
@@ -74,231 +119,530 @@
 <body>
     <div id="controls">
         <div class="buttonRack">
-            <button onclick="layout()">change layout</button>
+            <b>Show:</b>
+            <span><input id="imgSpec_Cbx" type="checkbox" checked>image specifications</span>
+            <span><input id="xmlSpecs_Cbx" type="checkbox">XML specifications</span>
+            <span><input id="input_Cbx" type="checkbox">input text</span>
+            <span><input id="output_Cbx" type="checkbox">output text</span>
+            <span><input id="leftRight_Cbx" type="checkbox">left-right display</span>
+            <span><input id="subPrev_Cbx" type="checkbox" checked>subtitle preview</span>
+            <span><input id="pngs_Cbx" type="checkbox">PNGs</span>
         </div>
         <div class="buttonRack">
-            <input id="fileInput" type="file">
+            <span><label>.srt file upload:<br></label><input id="file_Inp" type="file"></span>
+            <span><label>name </label><input id="baseName_Inp" type="text"></span>
+            <span><label>extension </label><input id="fileExt_Inp" type="text"></span>
         </div>
         <div class="buttonRack">
-            <button onclick="subtitle_str_to_json_str_auto()">to json format (object)</button>
-            <button onclick="subtitle_str_to_after_effects_jsx_str_auto()">to jsx format (aep script)</button>
-            <input id="fileNameInput" type="text">
-            <input id="extensionInput" type="text">
-            <button onclick="download_result()">download result file</button>
+            <button class="txtType" onclick="generate_json()">write json</button>
+            <button class="txtType" onclick="generate_jsx()">write jsx (After Effects)</button>
+            <button class="txtType" onclick="generate_xml()">write xml (PNGs)</button>
+            <button class="txtType" onclick="generate_csv()">write csv</button>
+            <button class="txtType dlType" onclick="download_result()">download file</button>
         </div>
         <div class="buttonRack">
-            <button onclick="generate_rasterized_subtitles_auto()">create rasterized subtitles</button>
-            <button onclick="download_pngs()">download raster subtitles</button>
-            <button onclick="clearCanvases()">clear rasterized subtitles</button>
+            <button class="pxlType" onclick="generate_pngs()">draw pngs</button>
+            <button class="pxlType dlType" onclick="download_pngs()">download PNGs</button>
+            <button class="pxlType" onclick="clearCanvases()">clear PNGs</button>
+        </div>
+        <div id="imgSpec_Elm" class="boxContourCol">
+            <div  class="flexCol">
+                <b>Image specifications</b>
+                <div class="flexRow">
+                    <div>
+                        _width <input id="width_Inp"  type="number" value="2048" style="width: 70px;"> px<br>
+                        height <input id="height_Inp" type="number" value="858"  style="width: 70px;"> px
+                    </div>
+                    <div>
+                        __font <input id="fontFamily_Inp" type="text"   value="Arial" style="width: 50px;"><br>
+                        weight <input id="fontStyle_Inp"  type="text"   value="bold"  style="width: 50px;">
+                    </div>
+                    <div>
+                        <span id="fontSize_Elm"> size </span>
+                            <input id="fontSize_Inp"   type="range"  value="60"    min="2" max="200" step="2"><br>
+                        line height
+                            <input id="lineHeight_Inp" type="number" value="1.6"   min="1" max="4" step="0.1">
+                    </div>
+                    <div>
+                        color        <input id="fillColor_Inp"   type="text" value="#fff" style="width: 70px;"><br>
+                        stroke color <input id="strokeColor_Inp" type="text" value="#000" style="width: 70px;">
+                    </div>
+                    <div>
+                        ___stroke width <input id="strokeWidth_Inp"     type="range" min="0" value="10"  max="100"><br>
+                        extrusion angle <input id="extrusionAngle_Inp"  type="range" min="0" value="235"  max="360"><br>
+                        extrusion depht <input id="extrusionDepth_Inp"  type="range" min="0" value="10" max="100">
+                    </div>
+                    <div>
+                        sample line 1 <input id="line1_Inp" type="text" value="Moi je l'aime noir et bien serré." style="width: 300px;"><br>
+                        sample line 2 <input id="line2_Inp" type="text" value="[bruit de machine à café]" style="width: 300px;">
+                    </div>
+                </div>
+            </div>
+            <span class="note">Secure DCP formats: Flat: 1998x1080, Scope: 2048x858</span>
+        </div>
+        <div id="xmlSpec_Elm" class="boxContourCol">
+            <b>XML specifications</b>
+            <div class="grid2col">
+                <span>ContentTitleText</span><input id="ContentTitleText_Inp" type="text" value="MyTitle">
+                <span>ReelNumber</span><input id="ReelNumber_Inp" type="text" value="1">
+                <span>Language</span><input id="Language_Inp" type="text" value="en">
+                <span>EditRate</span><input id="EditRate_Inp" type="text" value="24 1">
+                <span>TimeCodeRate</span><input id="TimeCodeRate_Inp" type="text" value="24">
+                <span>StartTime</span><input id="StartTime_Inp" type="text" value="00:00:00:00">
+                <span>DisplayType</span><input id="DisplayType_Inp" type="text" value="MainSubtitle">
+            </div>
+            <span class="note">Secure DCP fps: 24</span>
         </div>
     </div>
-    <div id="textareas">
-        <textarea id="input"></textarea>
-        <textarea id="output"></textarea>
+
+    <div id="inOut_Div">
+        <textarea id="input_Elm"></textarea>
+        <textarea id="output_Elm"></textarea>
     </div>
     
-    <div id="canvasContainer">
-        <input id="canvasSizes" type="range" min="0.1" value="1", max="2" step="0.1" style="width: 100%;">
+    <div id="subPrev_Div" class="boxContourCol">
+        <input id="previewSize_Inp" type="range" min="1" value="100" max="100" style="width: 100%;">
+        <canvas id="subtitlesPreview_Cvs"></canvas>
     </div>
+
+    <div id="pngs_Div" class="boxContourCol">
+    </div>
+
     <script>
-        const textareaContainer = document.getElementById('textareas');
-        const inputElm = document.getElementById("input");
-        const outputElm = document.getElementById("output");
-        const canvasContainer = document.getElementById('canvasContainer');
-        const canvasSizesInput = document.getElementById("canvasSizes");
-        canvasSizesInput.addEventListener("input", () => {
-            const size = Number(canvasSizesInput.value);
-            document.querySelectorAll('canvas').forEach(canvas => {
-                canvas.style.width = size*100 + '%';
-            });
+
+        // HTML ELEMENTS
+
+        // récupérer tous les éléments html par id
+        const HE = {};
+        document.querySelectorAll('[id]').forEach( elm => {
+            HE[elm.id] = elm;
         });
-        const fileNameInput = document.getElementById("fileNameInput");
-        fileNameInput.value = "super-sous-titres";
-        const extensionInput = document.getElementById("extensionInput");
-        extensionInput.value = ".txt";
-        const fileInput = document.getElementById("fileInput")
+        
+        [ HE.width_Inp , HE.height_Inp , HE.fontFamily_Inp , HE.fontStyle_Inp,
+        HE.fillColor_Inp , HE.strokeColor_Inp , HE.fontSize_Inp , HE.lineHeight_Inp,
+        HE.strokeWidth_Inp , HE.extrusionAngle_Inp , HE.extrusionDepth_Inp , 
+        HE.line1_Inp , HE.line2_Inp].forEach( 
+            e => e.addEventListener("input", () => {
+                update_subtitle();
+            })
+        )
+        HE.subPrev_Cbx.addEventListener("input", () => update_subtitle() );
+        HE.pngs_Cbx.addEventListener("input", () => generate_pngs() );
 
-        // file loading
+        HE.baseName_Inp.value = "super-sous-titres";
+        HE.fileExt_Inp.value = ".txt";
 
-        fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
+        // FILE LOADING
+
+        HE.file_Inp.addEventListener('change', () => {
+            const file = HE.file_Inp.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    inputElm.value = e.target.result;
+                    HE.input_Elm.value = e.target.result;
                 };
                 reader.readAsText(file, "UTF-8");
             }
         });
 
+        HE.previewSize_Inp.addEventListener("input", () => {
+            const size = HE.previewSize_Inp.value + "%";
+            HE.subtitlesPreview_Cvs.style.width = size;
+        })
+        const r = window.innerWidth / window.innerHeight;
+        if(r>1) {
+            HE.previewSize_Inp.value = "30";
+            HE.previewSize_Inp.dispatchEvent(new Event('input'));
+        }
+
+
         // UI
 
-        function layout() {
-            const curDir = window.getComputedStyle(textareaContainer).flexDirection;
-            const isRow = curDir === "row";
-            if(isRow) {
-                textareaContainer.style.flexDirection = "column";
-                inputElm.style.width = '98%';
-                outputElm.style.width = '98%';
+        // left-right layout
+        function setInputOutputlayout() {
+            const state = HE.leftRight_Cbx.checked;
+            if(state) {
+                HE.inOut_Div.style.flexDirection = "row";
+                HE.input_Elm.style.width = HE.output_Elm.style.width = '45%';
+                HE.input_Elm.style.height = HE.output_Elm.style.height = '100vh';
             } else {
-                textareaContainer.style.flexDirection = "row";
-                inputElm.style.width = '48%';
-                outputElm.style.width = '48%';
+                HE.inOut_Div.style.flexDirection = "column";
+                HE.input_Elm.style.width = HE.output_Elm.style.width = '90%';
+                HE.input_Elm.style.height = HE.output_Elm.style.height = '50vh';
             }
         }
+        HE.leftRight_Cbx.addEventListener("input", setInputOutputlayout);
+        setInputOutputlayout();
 
-        function clearCanvases() {
-            canvasContainer.innerHTML = "";
-        }
+        // display hide regarding chekboxes
+        function display(ctn,chbx) {ctn.style.display = chbx.checked? "flex" : "none";}
+        [
+            [HE.imgSpec_Elm,   HE.imgSpec_Cbx],
+            [HE.xmlSpec_Elm,   HE.xmlSpecs_Cbx],
+            [HE.input_Elm,     HE.input_Cbx],
+            [HE.output_Elm,    HE.output_Cbx],
+            [HE.subPrev_Div,   HE.subPrev_Cbx],
+            [HE.pngs_Div,      HE.pngs_Cbx]
+        ].forEach( ([ctn,chbx]) => {
+            chbx.addEventListener("input", () => display(ctn,chbx) );
+            display(ctn,chbx);
+        });
+    
 
-        // sous titres
+        // HELPERS
 
-        function subtitle_str_to_json_str(str) {
-            str = str.replace( /^(\d+)$\n/gm , "{");
-            str = str.replace(
-                /(\d\d):(\d\d):(\d\d),(\d\d\d).....(\d\d):(\d\d):(\d\d),(\d\d\d)/g, 
-                (match, fh, fm, fs, fms, th, tm, ts, tms) => {
-                    [fh, fm, fs, fms, th, tm, ts, tms] = 
-                        [fh, fm, fs, fms, th, tm, ts, tms].map(v => Number(v));
-                const ftime = fh*3600 + fm*60 + fs + fms/1000;
-                const ttime = th*3600 + tm*60 + ts + tms/1000;
-                return "from: " + ftime.toString() + ", to: " + ttime.toString() + ", ";
-            });
-            str = str.replace( /\n\n/gm , '\n');
-            str = str.replace( /^([^{].+)$/gm , '"$1"');
-            str = str.replace( /\"\n\"/g , '", "' );
-            str = str.replace( /\n^\"(.+)"$/gm , 'text: ["$1"]},' );
-            while(str.endsWith('\n')) str = str.slice(0,-1) // virer tous les retours à la fin du fichier
-            str = str.slice(0,-1); // virer la vrigule à la fin
-            return str;
-        }
-        function subtitle_str_to_json_str_auto() {
-            const inputStr = inputElm.value;
-            const outputStr = subtitle_str_to_json_str(inputStr);
-            outputElm.value = outputStr;
-            extensionInput.value = ".json";
-        }
-
-        function subtitle_str_to_after_effects_jsx_str(str) {
-            const jsonString = subtitle_str_to_json_str(str);
-            const jsxString = 'var DATA = [' + jsonString + "];\n" +
-                'var comp = app.project.activeItem; \n' +
-                'for(var i = 0; i < DATA.length; i++) { \n' +
-                '    var text = DATA[i].text[0]; \n' +
-                '    if(DATA[i].text[1]) \n' +
-                '        text += "\\n" + DATA[i].text[1] \n' +
-                '    var layer = comp.layers.addText(i); \n' +
-                '    layer.property("Source Text").setValue(text); \n' +
-                '    layer.inPoint = DATA[i].from; \n' +
-                '    layer.outPoint = DATA[i].to; \n' +
-                '}';
-            return jsxString;
-        }
-        function subtitle_str_to_after_effects_jsx_str_auto() {
-            const inputStr = inputElm.value;
-            const outputStr = subtitle_str_to_after_effects_jsx_str(inputStr);
-            outputElm.value = outputStr;
-            extensionInput.value = ".jsx";
+        const pad2 = n => String(n).padStart(2,"0");
+        const pad3 = n => String(n).padStart(3,"0");
+        function HMSm_to_HMSF(HMSm,fps) {
+            let HMS = HMSm.slice(0,-4);
+            let m = HMSm.slice(9);
+            m = Number(m)*fps/1000;
+            m = Math.floor(m);
+            m = pad2(m);
+            return HMS + ":" + m;
+        }        
+        function hmstoFlo(str) {
+            const h = Number(str[0]+str[1]);
+            const m = Number(str[3]+str[4]);
+            const s = Number(str[6]+str[7]);
+            const ms = Number(str[9]+str[10]+str[11]);
+            return {h:h,m:m,s:s,ms:ms};
         }
 
-        function subtitle_str_to_texts_str_array(str) {
-            str = str.replace( /^\d+$\n^.+$/gm , '' ); // virer id et times
-            str = str.replace( /^([^\n]+)$/gm , '"$1"' ); // guillemets autour des textes
-            str = str.replace( /"\n"/gm , '", "' ); // mettre les double lignes en une seule ligne
-            str = str.replace( /^\n/gm , '' ); // virer toutes les lignes vides
-            while(str.endsWith('\n')) str = str.slice(0,-1) // virer tous les retours à la fin du fichier
-            str = str.replace( /^(.+)$/gm , '[$1],'); // encadrer pour array
-            str = "[" + str + "]"; // encadrer dans un gros array
-            str = str.replace( /,\]/gm , "]" ); // virer la dernière virgule
-            return str;
-        }
-        function subtitle_str_to_texts_str_array_auto() {
-            const inputStr = inputElm.value;
-            const outputStr = subtitle_str_to_texts_str_array(inputStr);
-            outputElm.value = outputStr;
-            extensionInput.value = ".txt";
-        }
 
-        function generate_rasterized_subtitles(subtitleSpecs, container) {
-            const { subtitlesArray , width , height ,
-                    font , fontStyle , fontSize , lineHeight , 
-                    fontFillColor , fontStrokeColor , strokeWidth, 
-                    extrusion, extrusionAngle
-            } = subtitleSpecs;
-            const Y = height*0.9 - fontSize - lineHeight;
-            let i = 1;
-            for(const card of subtitlesArray) {
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                canvas.id = i;
-                container.appendChild(canvas);
-                ctx.fillStyle = fontFillColor;
-                ctx.strokeStyle = fontStrokeColor;
-                ctx.lineWidth = 10;
-                ctx.lineJoin = "round";
-                ctx.font = fontStyle + " " + fontSize + "px " + font;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                let y = Y;
-                for(const line of card) {
-                    if(extrusion>0) {
-                        ctx.strokeStyle = fontStrokeColor;
-                        for(let i = 0; i < extrusion; i++) {
-                            const rad = -extrusionAngle * Math.PI / 180;
-                            const dx = Math.cos(rad) * i;
-                            const dy = Math.sin(rad) * i;
-                            ctx.strokeText(line, width/2 + dx, y + dy);
-                        }
-                    }
-                    ctx.strokeStyle = fontStrokeColor;
-                    ctx.strokeText(line, width/2, y);
-                    ctx.fillText(line, width/2, y);
-                    y+=lineHeight;
+        // SPECS
+
+        function get_specs() {
+            let fps = HE.EditRate_Inp.value.split(' ');
+            fps = fps[0];
+            fps = Number(fps);
+            const specs = {
+                name: HE.baseName_Inp.value,
+                image: {
+                    width: Number(HE.width_Inp.value),
+                    height: Number(HE.height_Inp.value)
+                },
+                time: {
+                    fps: fps
+                },
+                font: {
+                    family: HE.fontFamily_Inp.value,
+                    style: HE.fontStyle_Inp.value,
+                    fillColor: HE.fillColor_Inp.value,
+                    strokeColor: HE.strokeColor_Inp.value,
+                    size: Number(HE.fontSize_Inp.value),
+                    lineHeight: Number(HE.lineHeight_Inp.value),
+                    strokeWidth: Number(HE.strokeWidth_Inp.value),
+                    extrusionAngle: Number(HE.extrusionAngle_Inp.value),
+                    extrusionDepth: Number(HE.extrusionDepth_Inp.value),
+                },
+                xml: {
+                    ContentTitleText: HE.ContentTitleText_Inp.value,
+                    ReelNumber: HE.ReelNumber_Inp.value,
+                    Language: HE.Language_Inp.value,
+                    EditRate: HE.EditRate_Inp.value,
+                    TimeCodeRate: HE.TimeCodeRate_Inp.value,
+                    StartTime: HE.StartTime_Inp.value,
+                    DisplayType: HE.DisplayType_Inp.value
                 }
             }
+            return specs;
         }
-        function generate_rasterized_subtitles_auto() {
-            const inputString = inputElm.value;
-            const jsonStyleString = subtitle_str_to_texts_str_array(inputString);
-            const jsonObj = JSON.parse(jsonStyleString);
-            const specs = {
-                subtitlesArray: jsonObj,
-                width: 1920, height: 1080,
-                font: 'verdana', fontStyle: '', fontSize: 24, lineHeight: 30,
-                fontFillColor: 'white', fontStrokeColor: 'black', strokeWidth: 10, 
-                extrusion: 5, extrusionAngle: -45
+
+        
+        // JSON
+
+        function subtitlesStr_to_JsonObj(str) {
+            for(let i = 0; i < str.length; i++)
+                if(['\r\t\0'].includes(str[i]))
+                    le.warn("Special character at",i,":",str[i]);
+            const subtitles = str.split('\n\n');
+            for(let i = 0; i < subtitles.length; i++) {
+                let spot = subtitles[i].split('\n');
+                const index = Number(spot[0]);
+                // /!\ single element array --> [0]
+                const fromStr = spot[1].match( /^(\d\d:\d\d:\d\d,\d\d\d)/g )[0];
+                const toStr   = spot[1].match( /(\d\d:\d\d:\d\d,\d\d\d)$/g )[0];
+                const fromFlo = hmstoFlo(fromStr);
+                const toFlo   = hmstoFlo(toStr);
+                const texts = [spot[2]];
+                const fromFloSec = fromFlo.h*3600 + fromFlo.m*60 + fromFlo.s + fromFlo.ms/1000;
+                const toFloSec = toFlo.h*3600 + toFlo.m*60 + toFlo.s + toFlo.ms/1000;
+                if(spot[3]) texts.push(spot[3]);
+                subtitles[i] = {
+                    index:   index,
+                    timeStr: {from: fromStr, to: toStr},
+                    timeFlo: {from: fromFlo,to: toFlo},
+                    timeFloSec: {from: fromFloSec, to: toFloSec},
+                    texts:   texts
+                }
             }
-            generate_rasterized_subtitles(specs,canvasContainer);
+            const projectNameObj = {"name": HE.baseName_Inp.value};
+            const specs = get_specs();
+            const jsonObj = {...specs,subtitles: subtitles};
+            return jsonObj;
         }
 
-        // download
+        function generate_json() {
+            const inputStr = input_Elm.value;
+            const jsonObj = subtitlesStr_to_JsonObj(inputStr);
+            const jsonStr = JSON.stringify(jsonObj,null,2);
+            HE.output_Elm.value = jsonStr;
+            HE.fileExt_Inp.value = ".json";
+        }
 
-        function downloadTextFromElement(elementId, filename, extension) {
-            const text = document.getElementById(elementId).value;
+
+        // JSX
+
+        function subtitleStr_to_jsxStr() {
+            const inputStr = input_Elm.value;
+            const jsonObj = subtitlesStr_to_JsonObj(inputStr);
+            const jsonStr = JSON.stringify(jsonObj,null,2);
+            const jsxStr =
+`var DATA =  ${jsonStr};
+
+var comp = app.project.activeItem;
+if(!comp)
+    comp = app.project.items.addComp(
+        DATA.name,
+        DATA.image.width,
+        DATA.image.height,
+        1,10,
+        DATA.time.fps);
+for(var i = 0; i < DATA.subtitles.length; i++) {
+    var texts = "";
+    if(DATA.subtitles[i].texts[0])
+        texts += DATA.subtitles[i].texts[0];
+    if(DATA.subtitles[i].texts[1])
+        texts += "\\n" + DATA.subtitles[i].texts[1];
+    var layer = comp.layers.addText(texts);
+    layer.property("Source Text").setValue(texts);
+    layer.inPoint = DATA.subtitles[i].timeFloSec.from;
+    layer.outPoint = DATA.subtitles[i].timeFloSec.to;
+    if(comp.duration <= layer.outPoint)
+        comp.duration = layer.outPoint;
+}`;
+            return jsxStr;
+        }
+
+        function generate_jsx() {
+            const inputStr = HE.input_Elm.value;
+            const outputStr = subtitleStr_to_jsxStr(inputStr);
+            HE.output_Elm.value = outputStr;
+            HE.fileExt_Inp.value = ".jsx";
+        }
+
+
+        // XML
+
+        function subtitleStr_to_xmlStr(str) {
+            function get_xml_IssueDate() {
+                const d = new Date();
+                function offset(o) {
+                    const sign = o<0? "+" : "-";
+                    o = Math.abs(o);
+                    const h = Math.floor(o/60);
+                    const m = Math.floor(o%60);
+                    return sign + pad2(h) + ":" + pad2(m);
+                }
+                const result = 
+                    String(d.getFullYear(),) +"-"+
+                    pad2(d.getMonth()+1) +"-"+
+                    pad2(d.getDate()) +"T"+
+                    pad2(d.getHours()) +":"+
+                    pad2(d.getMinutes()) +":"+
+                    pad2(d.getSeconds()) +
+                    offset(d.getTimezoneOffset());
+                return result;
+            }
+
+            const specs = get_specs();
+            const BEGIN = 
+`<?xml version="1.0" encoding="UTF-8"?>
+<SubtitleReel xmlns="http://www.smpte-ra.org/schemas/428-7/2014/DCST">
+    <Id>urn:uuid:${crypto.randomUUID()}</Id>
+    <ContentTitleText>${specs.xml.ContentTitleText}</ContentTitleText>
+    <IssueDate>${get_xml_IssueDate()}</IssueDate>
+    <ReelNumber>${specs.xml.ReelNumber}</ReelNumber>
+    <Language>${specs.xml.Language}</Language>
+    <EditRate>${specs.xml.EditRate}</EditRate>
+    <TimeCodeRate>${specs.xml.TimeCodeRate}</TimeCodeRate>
+    <StartTime>${specs.xml.StartTime}</StartTime>
+    <DisplayType>${specs.xml.DisplayType}</DisplayType>
+    <SubtitleList>
+        <Font>
+`;
+
+            const END = 
+`        </Font>
+    </SubtitleList>
+</SubtitleReel>`;
+
+            function get_xml_frame_bloc(imgNameStr,startStr,stopStr) {
+            let str = 
+`            <Subtitle TimeIn="${startStr}" TimeOut="${stopStr}">
+                <Image>${imgNameStr}</Image>
+            </Subtitle>
+`;
+                return str;
+            }
+
+            const inputStr = input_Elm.value;
+            const jsonObj = subtitlesStr_to_JsonObj(inputStr);
+            const baseName = HE.baseName_Inp.value;
+            const fps = Number(document.getElementById("TimeCodeRate_Inp").value);
+            let MIDDLE = "";
+            for(const frame of jsonObj.subtitles) {
+                let fileName = baseName;
+                fileName += "_" + String(frame.index).padStart(5,"0");
+                fileName += ".png";
+                const fromStr = HMSm_to_HMSF(frame.timeStr.from,fps);
+                const toStr = HMSm_to_HMSF(frame.timeStr.to,fps);
+                const bloc = get_xml_frame_bloc(fileName,fromStr,toStr);
+                MIDDLE += bloc;
+            }            
+
+            return BEGIN + MIDDLE + END;
+        }
+
+        function generate_xml() {
+            const inputStr = HE.input_Elm.value;
+            const outputStr = subtitleStr_to_xmlStr(inputStr);
+            HE.output_Elm.value = outputStr;
+            HE.fileExt_Inp.value = ".xml";
+        }
+
+        // CSV
+
+        function subtitleStr_to_csvStr(str) {
+            const inputStr = input_Elm.value;
+            const jsonObj = subtitlesStr_to_JsonObj(inputStr);
+            let csvStr = "";
+            const fps = jsonObj.time.fps;
+            const format = t => HMSm_to_HMSF(t,fps) + ', ';
+            for(let i = 0; i < jsonObj.subtitles.length; i++) {
+                const from = format(jsonObj.subtitles[i].timeStr.from);
+                const to = format(jsonObj.subtitles[i].timeStr.to);
+                const frame = String(i).padStart(5,'0');
+                const fileName = jsonObj.name + "_" + frame + ".png";
+                const line = from + to + fileName + "\n";
+                csvStr += line;
+            }
+            return csvStr;
+        }
+
+        function generate_csv() {
+            const inputStr = HE.input_Elm.value;
+            const outputStr = subtitleStr_to_csvStr(inputStr);
+            HE.output_Elm.value = outputStr;
+            HE.fileExt_Inp.value = ".csv";
+        }
+
+
+        
+        // CANVAS
+
+        function draw_subtitle(cvs,ctx,texts,specs,offset=[0,0]) {
+            ctx.fillStyle = specs.font.fillColor;
+            ctx.strokeStyle = specs.font.strokeColor;
+            ctx.lineWidth = specs.font.strokeWidth;
+            ctx.lineJoin = "butt";
+            ctx.miterLimit = 1.5;
+            const ctxFont = specs.font.style + " " + specs.font.size + "px " + specs.font.family;
+            ctx.font = ctxFont;
+            ctx.textAlign = "center";
+            const lineHeight = specs.font.lineHeight * specs.font.size;
+            const safety = specs.image.height * 0.9;
+            const yPos = safety - lineHeight;
+            let y = yPos;
+            let extrusionAngle = -specs.font.extrusionAngle * Math.PI / 180;
+            extrusionAngle -= Math.PI/2;
+            const x = specs.image.width/2;
+            for(const line of texts) {
+                for(let i = 0; i < specs.font.extrusionDepth; i++) {
+                    const dx = Math.cos(extrusionAngle) * i*2;
+                    const dy = Math.sin(extrusionAngle) * i*2;
+                    ctx.strokeText(line, x+dx, y+dy);
+                }
+                ctx.strokeText(line, specs.image.width/2, y);
+                y += specs.font.lineHeight * specs.font.size;
+            }
+            y = yPos;
+            for(const line of texts) {
+                ctx.fillText(line, x , y );
+                y += specs.font.lineHeight * specs.font.size;
+            }
+        }
+
+        // only font size in span...
+        function update_subtitle_displays() {
+            const val = HE.fontSize_Inp.value;
+            const pad = "".padStart(3 - val.length, '_');
+            HE.fontSize_Elm.innerHTML = pad + "size&nbsp;" + val + "&nbsp;px";
+        }
+
+        function update_subtitle_preview() {
+            const specs = get_specs();
+            const [W,H] = [specs.image.width,specs.image.height];
+            HE.subtitlesPreview_Cvs.width = W;
+            HE.subtitlesPreview_Cvs.height = H;
+            const ctx = HE.subtitlesPreview_Cvs.getContext("2d");
+            ctx.fillStyle = 'grey';
+            ctx.fillRect(0,0,W,H);
+            const sampleTexts = [ HE.line1_Inp.value , HE.line2_Inp.value ];
+            draw_subtitle(HE.subtitlesPreview_Cvs,ctx,sampleTexts,specs);
+        }
+
+        function update_subtitle() {
+            update_subtitle_displays();
+            update_subtitle_preview();
+        }
+        update_subtitle();
+
+        function generate_pngs() {
+            HE.pngs_Div.innerHTML = "";
+            const inputStr = HE.input_Elm.value;
+            const jsonObj = subtitlesStr_to_JsonObj(inputStr);
+            const specs = get_specs();
+            const lineHeight = specs.font.lineHeight*specs.font.size;
+            let i = 1;
+            for(const spot of jsonObj.subtitles) {
+                const canvas = document.createElement('canvas');
+                canvas.className = 'subtitleCanvas';
+                canvas.width = specs.image.width;
+                canvas.height = specs.image.height;
+                const ctx = canvas.getContext('2d');
+                canvas.id = i;
+                HE.pngs_Div.appendChild(canvas);
+                const texts = spot.texts;
+                draw_subtitle(canvas,ctx,texts,specs);
+            }
+        }
+
+        function clearCanvases() {HE.pngs_Div.innerHTML = "";}
+
+        
+        // DOWNLOAD
+
+        function download_result() {
+            const text = HE.output_Elm.value;
             const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = filename + extension;
+            const fileName = HE.baseName_Inp.value;
+            const ext = HE.fileExt_Inp.value;
+            a.download = fileName + ext;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(a.href);
         }
 
-        function download_result() {
-            const elementId = "output";
-            const filename = fileNameInput.value;
-            const extension = extensionInput.value;
-            downloadTextFromElement(elementId, filename, extension);
-        }
-
         function download_pngs() {
-            const filename = fileNameInput.value;
-            const canvases = document.querySelectorAll('canvas');
+            const fileName = HE.baseName_Inp.value;
+            const canvases = document.querySelectorAll('.subtitleCanvas');
             canvases.forEach( (canvas,i) => {
-                const curFilename = filename + "_" + String(i).padStart(5,'0');
+                const curFilename = fileName + "_" + String(i+1).padStart(5,'0');
                 const link = document.createElement('a');
                 link.href = canvas.toDataURL("image/png");
                 link.download = curFilename;
